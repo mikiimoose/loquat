@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cjson/cJSON.h>
 
 #define BUFF_SIZE 2048
 
@@ -36,9 +37,53 @@ int getApikey(char *buff, int size) {
     return 0;
 }
 
+char* extractResponse(char* ptr) {
+    cJSON *root = cJSON_Parse(ptr); // parse the json response
+    if (root == NULL) {
+        printf("Error: Could not parse json\n");
+        return NULL;
+    }
+
+    cJSON *choices = cJSON_GetObjectItem(root, "choices"); // get the choices object
+    if (choices == NULL) {
+        printf("Error: Could not get choices\n");
+        cJSON_Delete(root);
+        return NULL;
+    }
+
+    cJSON *choice = cJSON_GetArrayItem(choices, 0); // get the first choice
+    if (choice == NULL) {
+        printf("Error: Could not get choice\n");
+        cJSON_Delete(root);
+        return NULL;
+    }
+
+    cJSON *message = cJSON_GetObjectItem(choice, "message"); // get the text object
+    if (message == NULL) {
+        printf("Error: Could not get message\n");
+        cJSON_Delete(root);
+        return NULL;
+    }
+
+    cJSON *content = cJSON_GetObjectItem(message, "content"); // get the text object
+    if (content == NULL) {
+        printf("Error: Could not get content\n");
+        cJSON_Delete(root);
+        return NULL;
+    }
+
+    char* result = strdup(content->valuestring); // get the value of the text object
+    cJSON_Delete(root);
+    return result;
+}
+
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
     size_t realsize = size * nmemb;
-    printf("%s\n", (char *)ptr);
+    char* result = extractResponse((char *)ptr);
+    if (result) {
+        printf("%s\n", result);
+        free(result);
+    }
     return realsize;
 }
 
@@ -60,12 +105,12 @@ int curl_chatgpt(char* question) {
         printf("Error: Could not get api key\n");
         return -1;
     }
-    printf("Api key: %s\n", api_key);
-    printf("Api key length: %ld\n", strlen(api_key));
+    //printf("Api key: %s\n", api_key);
+    //printf("Api key length: %ld\n", strlen(api_key));
 
     char data[2500];
     snprintf(data, sizeof(data), "{\"model\": \"gpt-3.5-turbo\", \"messages\": [{\"role\": \"user\", \"content\": \"%s\"}]}", question);
-    printf("Data: %s\n", data);
+    //printf("Data: %s\n", data);
 
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
@@ -89,7 +134,7 @@ int curl_chatgpt(char* question) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback); 
     curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300L);
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
     if ((res = curl_easy_perform(curl)) != CURLE_OK) {
         printf("Error: %s\n", curl_easy_strerror(res));
