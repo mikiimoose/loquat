@@ -191,7 +191,10 @@ int main(int argc, char* argv[]) {
         free(answer);
         return -1;
     }
+
     printf("%s\n", response);
+    espeak(response);
+    
     free(response);
     free(answer);
 

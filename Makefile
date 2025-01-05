@@ -1,9 +1,9 @@
 TARGET = loquat
-LIBS = -lcurl -lcjson
+LIBS = -lcurl -lcjson -lespeak-ng
 CC = gcc
 CFLAGS = -g -Wall
 
-SOURCE = loquat.o
+SOURCE = loquat.o tts_espeak.o
 
 .PHONY: all
 
