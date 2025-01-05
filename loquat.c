@@ -8,7 +8,8 @@
 #include <cjson/cJSON.h>
 
 #define BUFF_SIZE 2048
-
+// global variable to store the response
+static char* answer = NULL;
 
 /*
 gets chatgpt api key from chatgpt.conf
@@ -37,6 +38,9 @@ int getApikey(char *buff, int size) {
     return 0;
 }
 
+/* extracts the response from the json object
+return NULL if error. Otherwise, return the response buffer. User must free the buffer.
+*/
 char* extractResponse(char* ptr) {
     cJSON *root = cJSON_Parse(ptr); // parse the json response
     if (root == NULL) {
@@ -79,20 +83,27 @@ char* extractResponse(char* ptr) {
 
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
     size_t realsize = size * nmemb;
-    char* result = extractResponse((char *)ptr);
-    if (result) {
-        printf("%s\n", result);
-        free(result);
+    if (realsize == 0 || ptr == NULL) {
+        answer = NULL;
+        return 0;
     }
+
+    answer = malloc(realsize + 1);
+    if (answer == NULL) {
+        printf("Error: Could not allocate memory\n");
+        return 0;
+    }
+    memset(answer, 0, realsize + 1);
+    memcpy(answer, ptr, realsize);
+
     return realsize;
 }
 
 /*
 sends a question to chatgpt and prints the response
-return value: 0 means success
-return value: -1 means error
+return NULL if error. Otherwise, return the response buffer. User must free the buffer.
 */
-int curl_chatgpt(char* question) {
+char* ask_chatgpt(char* question) {
     CURL *curl;
     CURLcode res = CURLE_OK;
     char* url = "https://api.openai.com/v1/chat/completions";
@@ -103,7 +114,7 @@ int curl_chatgpt(char* question) {
     int ret = getApikey(api_key, sizeof(api_key));
     if (ret == -1) {
         printf("Error: Could not get api key\n");
-        return -1;
+        return NULL;
     }
     //printf("Api key: %s\n", api_key);
     //printf("Api key length: %ld\n", strlen(api_key));
@@ -117,7 +128,7 @@ int curl_chatgpt(char* question) {
     if (!curl)
     {
         printf("Error: Could not initialize cURL.\n");
-        return -1;
+        return NULL;
     }
 
     struct curl_slist *headers = NULL;
@@ -143,28 +154,46 @@ int curl_chatgpt(char* question) {
 
     curl_easy_cleanup(curl);
     curl_global_cleanup();
-    return 0;
+
+    return answer;
 }
 
 
 
 int main(int argc, char* argv[]) {
-    char prompt[BUFF_SIZE] = {0};
+    char question[BUFF_SIZE] = {0};
     int size = 0;
 
-    memset(prompt, 0, sizeof(prompt));
+    memset(question, 0, sizeof(question));
 
     for (int i=1; i<argc; i++) {
-	    size += snprintf(prompt + size, BUFF_SIZE - size, "%s", argv[i]);
+	    size += snprintf(question + size, BUFF_SIZE - size, "%s", argv[i]);
         if (i < argc - 1) {
-            size += snprintf(prompt + size, BUFF_SIZE - size, " ");
+            size += snprintf(question + size, BUFF_SIZE - size, " ");
         }
     }
 
-    //printf("Prompt: %s\n", prompt);
+    //printf("Prompt: %s\n", question);
+    if (answer != NULL) {
+        free(answer);
+        answer = NULL;
+    }
 
+    answer = ask_chatgpt(question);
+    if (answer == NULL) {
+        printf("Error: Could not get response\n");
+        return -1;
+    }
 
-    curl_chatgpt(prompt);
+    char* response = extractResponse(answer);
+    if (response == NULL) {
+        printf("Error: Could not extract response\n");
+        free(answer);
+        return -1;
+    }
+    printf("%s\n", response);
+    free(response);
+    free(answer);
 
     return 0;
 
