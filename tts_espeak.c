@@ -5,12 +5,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "tts_espeak.h"
  
 static espeak_AUDIO_OUTPUT output = AUDIO_OUTPUT_SYNCH_PLAYBACK;
 static char *path = NULL;
 static void* user_data;
 static unsigned int *identifier;
- 
+
+
 int espeak(char* text) {
     char voicename[] = {"English"}; // Set voice by its name
     

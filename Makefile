@@ -3,7 +3,7 @@ LIBS = -lcurl -lcjson -lespeak-ng
 CC = gcc
 CFLAGS = -g -Wall
 
-SOURCE = loquat.o tts_espeak.o
+SOURCE = loquat.o tts_espeak.o ai_chatgpt.o ai_local.o network.o
 
 .PHONY: all
 
