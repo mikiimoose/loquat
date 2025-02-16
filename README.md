@@ -1,19 +1,22 @@
-Client software to talk to AI server and get response.
+# AI Client Software
 
-Dependencies:
-cURL            sudo apt install libcurl4-openssl-dev
-cJSON           sudo apt install libcjson-dev
-espeak-ng       sudo apt-get install libespeak-ng-dev
+A client application for communicating with AI servers and processing responses.
 
-portAudio		sudo apt-get install portaudio19-dev
+## Dependencies
 
-API Key         Get from openAI and save to local chatgpt.conf
+### System Libraries
+- **cURL**: `sudo apt install libcurl4-openssl-dev`
+- **cJSON**: `sudo apt install libcjson-dev`
+- **espeak-ng**: `sudo apt-get install libespeak-ng-dev`
+- **portAudio**: `sudo apt-get install portaudio19-dev`
 
-Local AI server
-ollama			https://ollama.com/
-deepseek		https://deepseek.com/
-AI Model		deepseek-r1:1.5b
+### API Configuration
+- **API Key**: Obtain from OpenAI and save to local `chatgpt.conf`
 
+### Local AI Server Options
+- [ollama](https://ollama.com/)
+- [deepseek](https://deepseek.com/)
 
-
+### Supported AI Model
+- deepseek-r1:1.5b
 
