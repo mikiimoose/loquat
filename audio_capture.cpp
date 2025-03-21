@@ -4,6 +4,8 @@
 #include <time.h>
 #include "keydetect.h"
 #include "audio_capture.h"
+#include "handling.h"
+#include <unistd.h>
 
 static int running = 1;
 static pthread_t record_thread;
@@ -11,7 +13,7 @@ static pthread_t record_thread;
 static char* get_audio_filename(void) {
     time_t now;
     struct tm *tm_info;
-    char *filename = malloc(32);  // Allocate memory for the filename
+    char *filename = (char*)malloc(FILE_NAME_LENGTH);  // Allocate memory for the filename
     
     if (filename == NULL) {
         return NULL;  // Handle allocation failure
@@ -19,22 +21,27 @@ static char* get_audio_filename(void) {
     
     time(&now);
     tm_info = localtime(&now);
+
+    int len = 0;
+    len = snprintf(filename, FILE_NAME_LENGTH, "%s/%s/", DEFAULT_FOLDER, AUDIO_FOLDER);
     
-    strftime(filename, 32, "audio_%Y%m%d_%H%M%S.wav", tm_info);
+    strftime(filename+len, FILE_NAME_LENGTH-len-1, "audio_%Y%m%d_%H%M%S.wav", tm_info);
     return filename;
 }
 
-int convert_wav_sample_rate(const char* input_file, const char* output_file) {
+
+// Convert WAV file from 48k to 16k
+static int convert_wav_sample_rate(const char* input_file, const char* output_file) {
     FILE *in_file = fopen(input_file, "rb");
     if (!in_file) {
-        printf("Could not open input file\n");
+        log_message(LOG_ERR, "Could not open input file\n");
         return -1;
     }
 
     // Read WAV header
     WavHeader header;
     if (fread(&header, sizeof(WavHeader), 1, in_file) != 1) {
-        printf("Could not read WAV header\n");
+        log_message(LOG_ERR, "Could not read WAV header\n");
         fclose(in_file);
         return -1;
     }
@@ -42,7 +49,7 @@ int convert_wav_sample_rate(const char* input_file, const char* output_file) {
     // Verify it's a valid WAV file
     if (strncmp(header.riff_header, "RIFF", 4) != 0 || 
         strncmp(header.wave_header, "WAVE", 4) != 0) {
-        printf("Invalid WAV file format\n");
+        log_message(LOG_ERR, "Invalid WAV file format\n");
         fclose(in_file);
         return -1;
     }
@@ -54,48 +61,6 @@ int convert_wav_sample_rate(const char* input_file, const char* output_file) {
         return -1;
     }
 
-    if (strncmp(header.data_header, "data", 4) != 0) {
-        printf("data header does not have data, having %s\n", header.data_header);
-        // Read and discard until we find the data header
-        char buffer[128] = {0};
-        fread(buffer, header.data_bytes, 1, in_file);
-
-        while (1) {
-            int n = fread(buffer, 1, 4, in_file);
-            if  (n != 4) {
-                printf("Could not find data header\n");
-                fclose(in_file);
-                return -1;
-            }
-
-            if (strncmp(buffer, "data", 4) == 0) {
-                break;
-            }
-        }
-        memcpy(header.data_header, "data", 4);
-
-        // Read data size
-        if (fread(&header.data_bytes, sizeof(int), 1, in_file) != 1) {
-            printf("Could not read data size\n");
-            fclose(in_file);
-            return -1;
-        }
-    }
-
-    printf("Input WAV header:\n");
-    printf("  RIFF header: %s\n", header.riff_header);
-    printf("  WAV header: %s\n", header.wave_header);
-    printf("  Sample rate: %d\n", header.sample_rate);
-    printf("  Byte rate: %d\n", header.byte_rate);
-    printf("  Sample alignment: %d\n", header.sample_alignment);
-    printf("  Bit depth: %d\n", header.bit_depth);
-    printf("  Number of channels: %d\n", header.num_channels);
-    printf("  Audio format: %d\n", header.audio_format);
-    printf("  WAV size: %d\n", header.wav_size);
-    printf("  FMT chunk size: %d\n", header.fmt_chunk_size);
-    printf("  Data header: %s\n", header.data_header);
-    printf("  Data bytes: %d\n", header.data_bytes);
-
     // Create output header
     WavHeader out_header = header;
     out_header.sample_rate = 16000;
@@ -106,7 +71,7 @@ int convert_wav_sample_rate(const char* input_file, const char* output_file) {
     // Open output file
     FILE *out_file = fopen(output_file, "wb");
     if (!out_file) {
-        printf("Could not create output file\n");
+        log_message(LOG_ERR, "Could not create output file\n");
         fclose(in_file);
         return -1;
     }
@@ -118,7 +83,7 @@ int convert_wav_sample_rate(const char* input_file, const char* output_file) {
     short sample;
     int sample_count = 0;
     while (fread(&sample, sizeof(short), 1, in_file) == 1) {
-        if (sample_count % 3 == 0) { // Take every third sample
+        if ((sample_count+1) % 3 == 0) { // Take every third sample
             fwrite(&sample, sizeof(short), 1, out_file);
         }
         sample_count++;
@@ -148,7 +113,7 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
     return paContinue;
 }
 
-void* record_audio(void *userData) {
+static void* record_audio(void *userData) {
     PaStream *stream;
     PaError err;
     PaStreamParameters inputParameters;
@@ -185,7 +150,6 @@ void* record_audio(void *userData) {
     inputParameters.device = paNoDevice;
 
 #ifdef AUDIO_CAPTURE_DEVICE
-    // If AUDIO_CAPTURE_DEVICE is defined, use it as the audio capture device
     const PaDeviceInfo* deviceInfo;
     for (int i = 0; i < numDevices; i++) {
         deviceInfo = Pa_GetDeviceInfo(i);
@@ -195,21 +159,19 @@ void* record_audio(void *userData) {
             break;
         }
     }
+#endif 
 
     if (inputParameters.device == paNoDevice) {
-        log_message(LOG_ERR, "No specified audio capture device found");
-        //sf_close(data.sndfile);
-        //return NULL;
+        log_message(LOG_ERR, "No specified audio capture device found, using default");
+        inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
+        if (inputParameters.device == paNoDevice) {
+            log_message(LOG_ERR, "No default audio capture device found");
+            sf_close(data.sndfile);
+            free(filename);
+            return NULL;  
+        }
     }
-#endif
 
-    inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
-    if (inputParameters.device == paNoDevice) {
-        log_message(LOG_ERR, "No default audio capture device found");
-        sf_close(data.sndfile);
-        free(filename);
-        return NULL;  
-    }
     inputParameters.channelCount = NUM_CHANNELS;
     inputParameters.sampleFormat = paInt16;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
@@ -253,24 +215,40 @@ void* record_audio(void *userData) {
     
     Pa_CloseStream(stream);
     sf_close(data.sndfile);
-    // ReSample the WAV file to 16000 Hz
-    char *output_filename = malloc(32);
-    if (output_filename == NULL) {
-        log_message(LOG_ERR, "Failed to allocate memory for output filename");
+
+    char *output_filename = NULL;
+
+    if (SAMPLE_RATE == 48000) {
+        // ReSample the WAV file to 16000 Hz
+        output_filename = (char*)malloc(FILE_NAME_LENGTH);
+        if (output_filename == NULL) {
+            log_message(LOG_ERR, "Failed to allocate memory for output filename");
+            free(filename);
+            pthread_exit(NULL);
+            return NULL;
+        }
+        strncpy(output_filename, filename,FILE_NAME_LENGTH);
+        // Remove the extension
+        char *ext = strrchr(output_filename, '.');
+        if (ext != NULL) {
+            *ext = '\0';
+        }
+        strcat(output_filename, "_16k.wav");
+        convert_wav_sample_rate(filename, output_filename);
+    }
+
+    // Doing speech to text
+    if (output_filename != NULL) {
+        start_speech_to_text(output_filename);
+        free(output_filename);
+    } else {
+        start_speech_to_text(filename);
+    }
+
+    if (SAMPLE_RATE == 48000) {
+        unlink(filename);
         free(filename);
-        pthread_exit(NULL);
-        return NULL;
     }
-    strcpy(output_filename, filename);
-    // Remove the extension
-    char *ext = strrchr(output_filename, '.');
-    if (ext != NULL) {
-        *ext = '\0';
-    }
-    strcat(output_filename, "_16k.wav");
-    convert_wav_sample_rate(filename, output_filename);
-    free(filename);
-    free(output_filename);
 
     pthread_exit(NULL);
 

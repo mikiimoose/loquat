@@ -1,0 +1,14 @@
+[Unit]
+Description=AI Client Service
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+ExecStart=/usr/local/bin/loquat
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=multi-user.target

@@ -8,7 +8,7 @@ static int running = 1;
 
 // Find the MSR keyboard device
 // Returns -1 if no MSR keyboard device is found    
-int find_msr_keyboard() {
+static int find_msr_keyboard() {
     FILE *fp;
     char line[512];
     char *handlers;
@@ -54,7 +54,7 @@ int find_msr_keyboard() {
 }
 
 // Thread function for F2 key detection
-void* detect_keys(void *arg) {
+static void* detect_keys(void *arg) {
     (void)arg;  // Unused parameter
     struct input_event ev;
     int fd;

@@ -11,7 +11,7 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
     size_t realsize = size * nmemb;
     struct ResponseData *resp = (struct ResponseData *)userp;
 
-    char *ptr = realloc(resp->data, resp->size + realsize + 1);
+    char *ptr = (char*)realloc(resp->data, resp->size + realsize + 1);
     if (!ptr) {
         printf("Error: Out of memory\n");
         return 0;
@@ -27,7 +27,7 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
 
 // Function to parse a single JSON response line
 OllamaResponse* parse_response_line(const char* json_str) {
-    OllamaResponse* resp = calloc(1, sizeof(OllamaResponse));
+    OllamaResponse* resp = (OllamaResponse*)calloc(1, sizeof(OllamaResponse));
     if (!resp) {
         printf("Error: Memory allocation failed for response struct\n");
         return NULL;
@@ -138,7 +138,7 @@ char* ask_ollama(const char* question) {
     char *final_response = NULL;
 
     // Initialize response data
-    response_data.data = malloc(1);
+    response_data.data = (char*)malloc(1);
     response_data.size = 0;
 
     // Initialize CURL
@@ -151,7 +151,7 @@ char* ask_ollama(const char* question) {
     }
 
     // Prepare JSON payload
-    char *json_payload = malloc(strlen(question) + 100);
+    char *json_payload = (char*)malloc(strlen(question) + 100);
     sprintf(json_payload, "{\"model\": \"deepseek-r1:1.5b\", \"prompt\": \"%s\"}", question);
 
     // Set CURL options
@@ -175,7 +175,7 @@ char* ask_ollama(const char* question) {
         printf("Error: %s\n", curl_easy_strerror(res));
     } else {
         // Extract response from JSON
-        char *response_result = malloc(1);
+        char *response_result = (char*)malloc(1);
         int response_result_size = 0;
         if (response_result == NULL) {
             printf("Error: Memory allocation failed for response_result\n");
@@ -193,7 +193,7 @@ char* ask_ollama(const char* question) {
                     if (resp->response) {
                         int current_size = response_result_size;
                         response_result_size += strlen(resp->response);
-                        char* ptr = realloc(response_result, response_result_size+1);
+                        char* ptr = (char*)realloc(response_result, response_result_size+1);
                         if (ptr == NULL) {
                             printf("Error: Memory allocation failed for response_result\n");
                             free(response_result);

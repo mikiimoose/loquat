@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <cjson/cJSON.h>
 #include "ai_common.h"
+#include "config.h"
 
 /*
 gets chatgpt api key from chatgpt.conf
@@ -16,8 +17,9 @@ return 0 means success
 int getApikey(char *buff, int size) {
     int fd;
     ssize_t nread;
+    char path[128];
 
-    char* path = "chatgpt.conf";
+    snprintf(path, sizeof(path), "%s/%s", DEFAULT_FOLDER, CHATGPT_API_KEY_FILE);
     fd = open(path, O_RDONLY);
     if (fd == -1) {
         printf("Error: Could not open file\n");
@@ -82,7 +84,7 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
     size_t realsize = size * nmemb;
     struct ResponseData *resp = (struct ResponseData *)userp;
 
-    char *ptr = realloc(resp->data, resp->size + realsize + 1);
+    char *ptr = (char*)realloc(resp->data, resp->size + realsize + 1);
     if (!ptr) {
         printf("Error: Out of memory\n");
         return 0;
@@ -123,7 +125,7 @@ char* ask_chatgpt(char* question) {
     //printf("Data: %s\n", data);
 
     // Initialize response data
-    response_data.data = malloc(1);
+    response_data.data = (char*)malloc(1);
     response_data.size = 0;
     
     curl_global_init(CURL_GLOBAL_ALL);

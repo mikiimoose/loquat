@@ -16,13 +16,6 @@
 #include "logger.h"
 #include "config.h"
 
-// Function declarations
-int find_msr_keyboard();
-void* detect_keys(void *arg);
-void signal_handler(int signo);
-void daemonize(void);
-
-
 int key_detection_initialize(void);
 void key_detection_deinitialize(void);
 #endif // KEYDETECT_H 

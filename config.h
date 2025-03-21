@@ -13,5 +13,21 @@
 #define VENDOR_ID "5131"
 #define PRODUCT_ID "2019"
 
+// MISC
+#define FILE_NAME_LENGTH 64
+
+#define DEFAULT_FOLDER	"/var/lib/loquat"
+
+// Folder for captured audio wav file
+#define AUDIO_FOLDER "audios"
+
+#define MODEL_FOLDER "models"
+// Whisper model name
+#define WHISPER_MODEL_NAME "ggml-base.en.bin"
+
+#define CHATGPT_API_KEY_FILE	"chatgpt.conf"
+
+#define DEFAULT_PULSE_SINK	"alsa_output.usb-Jieli_Technology_UACDemoV1.0_4150344B3237310C-00.analog-stereo.monitor"
+
 #endif /* CONFIG_H_ */
 

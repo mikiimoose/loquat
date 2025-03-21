@@ -29,4 +29,7 @@ typedef struct {
 void start_audio_capture();
 void stop_audio_capture();
 
+int audio_capture_initialize();
+void audio_capture_deinitialize();
+
 #endif // AUDIO_CAPTURE_H 
