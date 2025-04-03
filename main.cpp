@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     }
     
     // Initialize logging
-    log_init("s2t", output_type);
+    log_init("loquat", output_type);
     tts_init();
     
     // Set up signal handlers

@@ -34,7 +34,7 @@ clean:
 install: loquat
 	@echo "Installing Loquat..."
 	@sudo install -m 755 loquat /usr/local/bin/
-	@sudo install -m 644 loquat.service /etc/systemd/system/
+	@sudo install -m 644 loquat.service /lib/systemd/system/
 	@sudo mkdir -p /var/lib/loquat
 	@sudo chown ${USER}:${USER} /var/lib/loquat
 	@sudo chmod 755 /var/lib/loquat
@@ -47,6 +47,7 @@ install: loquat
 	@sudo systemctl daemon-reload
 	@echo "Installation complete. You can now start the service with:"
 	@echo "sudo systemctl enable loquat"
+	@sudo systemctl enable loquat
 	@echo "sudo systemctl start loquat"
 
 .PHONY: clean

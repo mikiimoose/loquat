@@ -4,7 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=YOUR_USERNAME
+#User=YOUR_USERNAME
+
+Environment=PULSE_SERVER=/run/user/1000/pulse/native
+Environment=PULSE_SINK=alsa_output.usb-Jieli_Technology_UACDemoV1.0_4150344B3237310C-00.analog-stereo
+
 ExecStart=/usr/local/bin/loquat
 Restart=on-failure
 RestartSec=5
