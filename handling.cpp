@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include "handling.h"
 #include "logger.h"
+#include "ai_common.h"
+#include "tts_espeak.h"
+#include "network.h"
 #include <unistd.h>
 
 
@@ -19,7 +22,21 @@ static void* convert(void* arg) {
     char* text = NULL;
     if (text) {
         log_message(LOG_INFO, "%s", text);
+        char* ai_response;
+        if (check_online_status() == 1) {
+            ai_response = ask_chatgpt(text);
+        } else {
+            ai_response = ask_ollama(text);
+        }
+        if (ai_response) {
+            espeak(ai_response);
+        } else {
+            char* errmessage = "Error: empty AI response";
+            espeak(errmessage);
+        }
         free(text);
+        unlink(filename);
+        free(filename);
     } else {
         log_message(LOG_ERR, "Empty voice ----------");
     }

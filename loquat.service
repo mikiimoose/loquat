@@ -10,7 +10,7 @@ Environment=PULSE_SERVER=/run/user/1000/pulse/native
 Environment=PULSE_SINK=alsa_output.usb-Jieli_Technology_UACDemoV1.0_4150344B3237310C-00.analog-stereo
 
 ExecStart=/usr/local/bin/loquat
-Restart=on-failure
+Restart=always
 RestartSec=5
 Environment=DISPLAY=:0
 

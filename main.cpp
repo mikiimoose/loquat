@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <limits.h>
+#include "speaker_detect.h"
 
 // Global variables
 static volatile sig_atomic_t running = 1;
@@ -87,6 +88,8 @@ int main(int argc, char *argv[]) {
     log_init("loquat", output_type);
     tts_init();
     
+    
+    
     // Set up signal handlers
     signal(SIGTERM, signal_handler);
     signal(SIGINT, signal_handler);
@@ -95,6 +98,11 @@ int main(int argc, char *argv[]) {
     char path[128];
     snprintf(path, 128, "%s/%s", DEFAULT_FOLDER, AUDIO_FOLDER);
     delete_files_in_directory(path);
+
+    if (speaker_init() < 0) {
+        log_message(LOG_ERR, "Failed to initialize speaker detection");
+        goto exit1;
+    }
 
     // 
     if (audio_capture_initialize() < 0) {
@@ -107,6 +115,7 @@ int main(int argc, char *argv[]) {
         log_message(LOG_ERR, "Failed to initialize key detection");
         goto exit2;
     }
+    espeak("Ready to talk");
     
     // Main loop
     while (running) {

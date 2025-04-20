@@ -3,7 +3,7 @@ CC = gcc
 TARGET = loquat
 
 CFLAGS = -g -Wall -Wextra
-LDFLAGS = -pthread -lcap -lcurl -lcjson -lespeak-ng
+LDFLAGS = -pthread -lcap -lcurl -lcjson -lespeak-ng -lusb-1.0
 LIBS_DIR = -L./libs
 INCLUDES = -I. -I./include 
 
@@ -11,7 +11,7 @@ CFLAGS += $(shell pkg-config --cflags portaudio-2.0 sndfile)
 LDFLAGS += $(shell pkg-config --libs portaudio-2.0 sndfile)
 
 SRCS = tts_espeak.cpp ai_chatgpt.cpp ai_local.cpp network.cpp
-SRCS += keydetect.cpp audio_capture.cpp logger.cpp main.cpp handling.cpp
+SRCS += keydetect.cpp audio_capture.cpp logger.cpp main.cpp handling.cpp speaker_detect.cpp
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.c=.o)
 

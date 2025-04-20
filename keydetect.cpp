@@ -4,7 +4,7 @@
 
 static pthread_t detect_thread;
 static char device_path[MAX_DEVICE_PATH] = {0};
-static int running = 1;
+static int running = 0;
 
 // Find the MSR keyboard device
 // Returns -1 if no MSR keyboard device is found    
@@ -108,6 +108,20 @@ static void* detect_keys(void *arg) {
                         log_message(LOG_INFO, "F2 key released");
                         stop_audio_capture();
                     }
+                } else if (ev.code == KEY_F3) {
+                    if (ev.value == 1) { // Key press
+                        log_message(LOG_INFO, "F3 key pressed");
+
+                    } else if (ev.value == 0) { // Key release
+                        log_message(LOG_INFO, "F3 key released");
+                    }
+                } else if (ev.code == KEY_F4) {
+                    if (ev.value == 1) { // Key press
+                        log_message(LOG_INFO, "F4 key pressed");
+
+                    } else if (ev.value == 0) { // Key release
+                        log_message(LOG_INFO, "F4 key released");
+                    }
                 }
             }
         }
@@ -128,11 +142,14 @@ int key_detection_initialize() {
         return -1;
     }
     
+    running = 1;
+
     // Create detection thread
     if (pthread_create(&detect_thread, NULL, detect_keys, NULL) != 0) {
         log_message(LOG_ERR, "Failed to create detection thread: %s", strerror(errno));
         return -1;
     }
+
 
     return 0;
 }

@@ -10,8 +10,10 @@
 
 // MSR keyboard device
 #define MAX_DEVICE_PATH 512
-#define VENDOR_ID "5131"
-#define PRODUCT_ID "2019"
+//#define VENDOR_ID "5131"
+//#define PRODUCT_ID "2019"
+#define VENDOR_ID "1189"
+#define PRODUCT_ID "8890"
 
 // MISC
 #define FILE_NAME_LENGTH 64
