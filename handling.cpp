@@ -4,10 +4,12 @@
 #include <pthread.h>
 #include "handling.h"
 #include "logger.h"
+#include "stt_whisper.h"
 #include "ai_common.h"
 #include "tts_espeak.h"
 #include "network.h"
 #include <unistd.h>
+
 
 
 static void* convert(void* arg) {
@@ -19,7 +21,9 @@ static void* convert(void* arg) {
 
     log_message(LOG_INFO, "Converting speech to text");
 
-    char* text = NULL;
+    char* text = stt_whisper(filename);
+
+    
     if (text) {
         log_message(LOG_INFO, "%s", text);
         char* ai_response;

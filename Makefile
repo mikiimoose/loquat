@@ -2,16 +2,30 @@ CPLUSPLUS = g++
 CC = gcc
 TARGET = loquat
 
-CFLAGS = -g -Wall -Wextra
-LDFLAGS = -pthread -lcap -lcurl -lcjson -lespeak-ng -lusb-1.0
+# Add architecture detection
+ARCH ?= rpi
 LIBS_DIR = -L./libs
-INCLUDES = -I. -I./include 
 
+# Add x86 target
+.PHONY: x86
+x86:
+	$(MAKE) ARCH=x86 $(TARGET)
+
+# Override libcommon based on architecture
+ifeq ($(ARCH),x86)
+    LIBS_DIR += -L./libs/x86
+else
+    LIBS_DIR += -L./libs/rpi
+endif
+
+LDFLAGS = -pthread -lcap -lwhisper -lcommon -lggml -lggml-base -lggml-cpu -lcurl -lcjson -lespeak-ng -lusb-1.0
+CFLAGS = -g -Wall -Wextra
 CFLAGS += $(shell pkg-config --cflags portaudio-2.0 sndfile)
 LDFLAGS += $(shell pkg-config --libs portaudio-2.0 sndfile)
+INCLUDES = -I. -I./include -I./include/ggml/include
 
 SRCS = tts_espeak.cpp ai_chatgpt.cpp ai_local.cpp network.cpp
-SRCS += keydetect.cpp audio_capture.cpp logger.cpp main.cpp handling.cpp speaker_detect.cpp
+SRCS += stt_whisper.cpp keydetect.cpp audio_capture.cpp logger.cpp main.cpp handling.cpp speaker_detect.cpp
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.c=.o)
 
