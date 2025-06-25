@@ -1,5 +1,7 @@
 #include "keydetect.h"
 #include "audio_capture.h"
+#include "snapshot.h"
+#include "cameradetect.h"
 
 
 static pthread_t detect_thread;
@@ -53,72 +55,64 @@ static int find_msr_keyboard() {
     return -1;
 }
 
-// Thread function for F2 key detection
 static void* detect_keys(void *arg) {
-    (void)arg;  // Unused parameter
+    (void)arg;
     struct input_event ev;
     int fd;
-    
-    // Open the input device
+
     fd = open(device_path, O_RDONLY);
-    if (fd == -1) { 
+    if (fd == -1) {
         log_message(LOG_ERR, "Failed to open input device: %s", strerror(errno));
         pthread_exit(NULL);
     }
-    
-    log_message(LOG_INFO, "Listening for F2 key events");
-    
+
+    log_message(LOG_INFO, "Listening for key events on device: %s", device_path);
+
     while (running) {
-        // Read input events with timeout
         fd_set rfds;
         struct timeval tv;
         int retval;
 
         FD_ZERO(&rfds);
         FD_SET(fd, &rfds);
-        
-        // Set timeout to 1 second
+
         tv.tv_sec = 1;
         tv.tv_usec = 0;
 
         retval = select(fd + 1, &rfds, NULL, NULL, &tv);
-        
+
         if (retval == -1) {
-            if (errno == EINTR) continue;  // Interrupted by signal
+            if (errno == EINTR) continue;
             log_message(LOG_ERR, "Select failed: %s", strerror(errno));
             break;
         }
-        
+
         if (retval) {
             ssize_t bytes_read = read(fd, &ev, sizeof(struct input_event));
             if (bytes_read < 0) {
-                if (errno == EINTR) continue;  // Interrupted by signal
+                if (errno == EINTR) continue;
                 log_message(LOG_ERR, "Failed to read input event: %s", strerror(errno));
                 break;
             }
-            
-            // Check for key events
+
             if (ev.type == EV_KEY) {
-                if (ev.code == KEY_F2) {
+                log_message(LOG_INFO, "Key event: code=%d, value=%d", ev.code, ev.value);
+
+                if (ev.code == KEY_F3 && ev.value == 1) {
+                    log_message(LOG_INFO, "F3 was detected");
+                    trigger_snapshot();
+                }
+                else if (ev.code == KEY_F2) {
                     if (ev.value == 1) { // Key press
                         log_message(LOG_INFO, "F2 key pressed");
                         start_audio_capture();
-
                     } else if (ev.value == 0) { // Key release
                         log_message(LOG_INFO, "F2 key released");
                         stop_audio_capture();
                     }
-                } else if (ev.code == KEY_F3) {
-                    if (ev.value == 1) { // Key press
-                        log_message(LOG_INFO, "F3 key pressed");
-
-                    } else if (ev.value == 0) { // Key release
-                        log_message(LOG_INFO, "F3 key released");
-                    }
                 } else if (ev.code == KEY_F4) {
                     if (ev.value == 1) { // Key press
                         log_message(LOG_INFO, "F4 key pressed");
-
                     } else if (ev.value == 0) { // Key release
                         log_message(LOG_INFO, "F4 key released");
                     }
@@ -126,36 +120,28 @@ static void* detect_keys(void *arg) {
             }
         }
     }
-    
+
     close(fd);
     log_message(LOG_INFO, "Key detection thread terminated");
     pthread_exit(NULL);
 }
 
-// Initialize key detection
-// Returns 0 on success, -1 on failure
 int key_detection_initialize() {
-        
-    // Find the MSR keyboard device
     if (find_msr_keyboard() < 0) {
         log_message(LOG_ERR, "Could not find MSR keyboard device");
         return -1;
     }
-    
-    running = 1;
+    log_message(LOG_INFO, "Using input device: %s", device_path);
 
-    // Create detection thread
+    running = 1;
     if (pthread_create(&detect_thread, NULL, detect_keys, NULL) != 0) {
         log_message(LOG_ERR, "Failed to create detection thread: %s", strerror(errno));
         return -1;
     }
-
-
     return 0;
 }
 
-// Deinitialize key detection
 void key_detection_deinitialize(void) {
     running = 0;
-    pthread_join(detect_thread, NULL); 
+    pthread_join(detect_thread, NULL);
 }

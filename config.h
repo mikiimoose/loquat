@@ -31,5 +31,9 @@
 
 #define DEFAULT_PULSE_SINK	"alsa_output.usb-Jieli_Technology_UACDemoV1.0_4150344B3237310C-00.analog-stereo.monitor"
 
+// Camera Configuration
+#define CAMERA_VENDOR_ID "1224"
+#define CAMERA_PRODUCT_ID "2a25"
+
 #endif /* CONFIG_H_ */
 

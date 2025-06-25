@@ -18,14 +18,14 @@ else
     LIBS_DIR += -L./libs/rpi
 endif
 
-LDFLAGS = -pthread -lcap -lwhisper -lcommon -lggml -lggml-base -lggml-cpu -lcurl -lcjson -lespeak-ng -lusb-1.0
+LDFLAGS = -pthread -lcap -lwhisper -lcommon -lggml -lggml-base -lggml-cpu -lcurl -lcjson -lespeak-ng -lusb-1.0 -lopencv_core -lopencv_imgcodecs -lopencv_videoio
 CFLAGS = -g -Wall -Wextra
-CFLAGS += $(shell pkg-config --cflags portaudio-2.0 sndfile)
-LDFLAGS += $(shell pkg-config --libs portaudio-2.0 sndfile)
+CFLAGS += $(shell pkg-config --cflags portaudio-2.0 sndfile opencv4)
+LDFLAGS += $(shell pkg-config --libs portaudio-2.0 sndfile opencv4)
 INCLUDES = -I. -I./include -I./include/ggml/include
 
 SRCS = tts_espeak.cpp ai_chatgpt.cpp ai_local.cpp network.cpp
-SRCS += stt_whisper.cpp keydetect.cpp audio_capture.cpp logger.cpp main.cpp handling.cpp speaker_detect.cpp
+SRCS += stt_whisper.cpp keydetect.cpp audio_capture.cpp logger.cpp main.cpp handling.cpp speaker_detect.cpp snapshot.cpp cameradetect.cpp
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.c=.o)
 

@@ -9,6 +9,12 @@
 #include <string.h>
 #include <limits.h>
 #include "speaker_detect.h"
+#include "logger.h"
+
+extern "C" {
+#include "cameradetect.h"
+#include "snapshot.h"
+}
 
 // Global variables
 static volatile sig_atomic_t running = 1;
@@ -21,10 +27,10 @@ void signal_handler(int signo) {
 }
 
 void print_usage(const char *program_name) {
-    fprintf(stderr, "Usage: %s [options]\n", program_name);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -c, --console    Output logs to console instead of syslog\n");
-    fprintf(stderr, "  -h, --help       Display this help message\n");
+    log_message(LOG_ERR, "Usage: %s [options]", program_name);
+    log_message(LOG_ERR, "Options:");
+    log_message(LOG_ERR, "  -c, --console    Output logs to console instead of syslog");
+    log_message(LOG_ERR, "  -h, --help       Display this help message");
 }
 
 // Deletes all files in the specified directory
@@ -111,18 +117,32 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize key detection
+
     if (key_detection_initialize() < 0) {
         log_message(LOG_ERR, "Failed to initialize key detection");
         goto exit2;
     }
-    espeak("Ready to talk");
+
     
+    // Initialize camera
+    if (!camera_init(640, 480)) {
+        log_message(LOG_ERR, "Failed to initialize camera");
+        goto exit2;
+    }
+
+    // Initialize snapshot thread
+    snapshot_thread_initialize();
+
+    espeak("Ready to talk");
+
     // Main loop
     while (running) {
-        sleep(1);  // Sleep to prevent busy waiting
+        sleep(1);  // No need to poll for F3 here!
     }
     
     key_detection_deinitialize();
+    camera_deinit();
+    snapshot_thread_deinitialize();
 exit2:
     audio_capture_deinitialize();
 exit1:

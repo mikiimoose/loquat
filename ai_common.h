@@ -24,4 +24,6 @@ char* ask_ollama(const char* question);
 
 char* ask_chatgpt(char* question);
 
+char* ask_chatgpt_with_image(const char* question, const char* image_path);
+
 #endif
